@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Customer Segmentation & Recommendation</title>
+</head>
+<body>
+    <div class="container">
+        <h1>Customer Segmentation & Recommendation</h1>
+        
+        <!-- Input Form -->
+        <form id="prediction-form" method="POST" action="/predict">
+            <label for="customer_id">Enter Customer ID:</label>
+            <input type="text" id="customer_id" name="customer_id" required>
+            <button type="submit">Predict</button>
+        </form>
+
+        <!-- Upload Form -->
+        <form id="upload-form" method="POST" action="/upload" enctype="multipart/form-data">
+            <label for="file">Upload CSV File:</label>
+            <input type="file" id="file" name="file" required>
+            <button type="submit">Upload</button>
+        </form>
+        
+        <!-- Display Results -->
+        <div id="result"></div>
+        <div id="uploaded-result"></div>
+    </div>
+    
+    <script>
+        document.getElementById('prediction-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const customer_id = document.getElementById('customer_id').value;
+            
+            const response = await fetch('/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ customer_id })
+            });
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '';
+            
+            if (response.ok) {
+                const data = await response.json();
+                resultDiv.innerHTML = `<h3>Customer ID: ${customer_id}</h3>
+                                        <p>Cluster: ${data.cluster}</p>
+                                        <p>Recommended Products: ${data.recommendations.join(', ')}</p>
+                                        <div>${data.graph}</div>`;
+            } else {
+                const error = await response.json();
+                resultDiv.innerHTML = `<p style="color:red;">${error.error}</p>`;
+            }
+        });
+
+        document.getElementById('upload-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(document.getElementById('upload-form'));
+            
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const resultDiv = document.getElementById('uploaded-result');
+            resultDiv.innerHTML = '';
+            
+            if (response.ok) {
+                resultDiv.innerHTML = `<p>File uploaded and processed successfully.</p>`;
+            } else {
+                const error = await response.json();
+                resultDiv.innerHTML = `<p style="color:red;">${error.error}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
